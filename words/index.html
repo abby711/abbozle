@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Abbozle Words</title>
+  <meta name="description" content="Unlimited five-letter word puzzles. Six tries, no daily limit.">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%236aaa64'/%3E%3Ctext x='32' y='45' font-family='Arial,sans-serif' font-size='38' font-weight='700' fill='white' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;700;800&family=Zilla+Slab:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script>
+    // Apply saved theme before first paint so there's no light/dark flash.
+    (function () {
+      var s = {};
+      try { s = JSON.parse(localStorage.getItem('abbozle.words.settings')) || {}; } catch (e) {}
+      var dark = s.dark === true || (s.dark !== false && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+      var c = document.documentElement.classList;
+      if (dark) c.add('dark');
+      if (s.contrast) c.add('contrast');
+    })();
+  </script>
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <div class="header-side">
+        <a class="icon-btn" href="../" aria-label="All Abbozle apps" title="All apps">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>
+        </a>
+        <button class="icon-btn" id="help-btn" aria-label="How to play" title="How to play">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.5"/><circle class="fill" cx="12" cy="17" r="1"/></svg>
+        </button>
+      </div>
+
+      <h1 class="title"><span class="brand">Abbozle </span><span class="accent">Words</span></h1>
+
+      <div class="header-side right">
+        <button class="icon-btn" id="round-btn" aria-label="Give up" title="Give up">
+          <svg class="icon-flag" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 21V4"/><path d="M5.5 4.5h12l-2.6 4.5 2.6 4.5h-12"/></svg>
+          <svg class="icon-next" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v5h-5"/></svg>
+        </button>
+        <button class="icon-btn" id="stats-btn" aria-label="Statistics" title="Statistics">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-7M12 20V5M19 20v-10"/></svg>
+        </button>
+        <button class="icon-btn" id="settings-btn" aria-label="Settings" title="Settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+    <div id="sr-announce" class="sr-only" aria-live="polite"></div>
+
+    <main class="board-container" id="board-container">
+      <div id="board" class="board" role="grid" aria-label="Game board"></div>
+    </main>
+
+    <div class="game-over-bar" id="game-over-bar">
+      <span class="over-msg" id="over-msg"></span>
+      <button class="btn btn-primary" id="over-next">Next word</button>
+    </div>
+
+    <div id="keyboard" class="keyboard" aria-label="Keyboard">
+      <div class="kb-row">
+        <button data-key="q">q</button><button data-key="w">w</button><button data-key="e">e</button><button data-key="r">r</button><button data-key="t">t</button><button data-key="y">y</button><button data-key="u">u</button><button data-key="i">i</button><button data-key="o">o</button><button data-key="p">p</button>
+      </div>
+      <div class="kb-row">
+        <div class="kb-spacer"></div>
+        <button data-key="a">a</button><button data-key="s">s</button><button data-key="d">d</button><button data-key="f">f</button><button data-key="g">g</button><button data-key="h">h</button><button data-key="j">j</button><button data-key="k">k</button><button data-key="l">l</button>
+        <div class="kb-spacer"></div>
+      </div>
+      <div class="kb-row">
+        <button data-key="enter" class="wide">enter</button>
+        <button data-key="z">z</button><button data-key="x">x</button><button data-key="c">c</button><button data-key="v">v</button><button data-key="b">b</button><button data-key="n">n</button><button data-key="m">m</button>
+        <button data-key="back" class="wide" aria-label="Backspace">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 5H8.5L2.5 12l6 7H21a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><path d="M17 9.5l-5 5M12 9.5l5 5"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- How to play -->
+  <div class="overlay" id="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <div class="modal">
+      <button class="icon-btn close-btn" data-close aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <h2 class="help-title" id="help-title">How To Play</h2>
+      <p class="help-sub">Guess the word in 6 tries.</p>
+      <ul class="help-list">
+        <li>Each guess must be a valid 5-letter word.</li>
+        <li>The color of the tiles will change to show how close your guess was to the word.</li>
+      </ul>
+      <p class="help-strong">Examples</p>
+      <div class="example">
+        <div class="ex-row"><div class="tile" data-state="correct">p</div><div class="tile" data-state="tbd">l</div><div class="tile" data-state="tbd">a</div><div class="tile" data-state="tbd">n</div><div class="tile" data-state="tbd">t</div></div>
+        <p><strong>P</strong> is in the word and in the correct spot.</p>
+      </div>
+      <div class="example">
+        <div class="ex-row"><div class="tile" data-state="tbd">s</div><div class="tile" data-state="tbd">h</div><div class="tile" data-state="present">o</div><div class="tile" data-state="tbd">r</div><div class="tile" data-state="tbd">e</div></div>
+        <p><strong>O</strong> is in the word but in the wrong spot.</p>
+      </div>
+      <div class="example">
+        <div class="ex-row"><div class="tile" data-state="tbd">m</div><div class="tile" data-state="tbd">i</div><div class="tile" data-state="absent">g</div><div class="tile" data-state="tbd">h</div><div class="tile" data-state="tbd">t</div></div>
+        <p><strong>G</strong> is not in the word in any spot.</p>
+      </div>
+      <p class="help-foot">No daily limit. When you finish, press <strong>Next word</strong> (or Enter) for a fresh puzzle.</p>
+    </div>
+  </div>
+
+  <!-- Statistics -->
+  <div class="overlay" id="stats-modal" role="dialog" aria-modal="true" aria-labelledby="stats-title">
+    <div class="modal">
+      <button class="icon-btn close-btn" data-close aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+
+      <div class="result" id="result">
+        <p class="result-title" id="result-title"></p>
+        <div class="result-word" id="result-word"></div>
+        <a class="result-def" id="result-def" target="_blank" rel="noopener">Definition ↗</a>
+      </div>
+
+      <h2 id="stats-title">Statistics</h2>
+      <div class="stats-row">
+        <div class="stat"><div class="stat-num" id="st-played">0</div><div class="stat-label">Played</div></div>
+        <div class="stat"><div class="stat-num" id="st-win">0</div><div class="stat-label">Win %</div></div>
+        <div class="stat"><div class="stat-num" id="st-streak">0</div><div class="stat-label">Current Streak</div></div>
+        <div class="stat"><div class="stat-num" id="st-max">0</div><div class="stat-label">Max Streak</div></div>
+      </div>
+
+      <h2>Guess Distribution</h2>
+      <div class="dist" id="dist"></div>
+
+      <div class="modal-actions" id="stats-actions">
+        <button class="btn btn-primary btn-lg" id="stats-next">Next word</button>
+        <button class="btn btn-secondary btn-lg" id="share-btn">
+          Share
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M7.5 7.5L12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="overlay" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="modal">
+      <button class="icon-btn close-btn" data-close aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <h2 id="settings-title">Settings</h2>
+      <div class="setting">
+        <div><div class="setting-name">Hard Mode</div><div class="setting-desc">Any revealed hints must be used in later guesses</div></div>
+        <button class="switch" role="switch" aria-checked="false" id="sw-hard" aria-label="Hard mode"></button>
+      </div>
+      <div class="setting">
+        <div><div class="setting-name">Dark Theme</div></div>
+        <button class="switch" role="switch" aria-checked="false" id="sw-dark" aria-label="Dark theme"></button>
+      </div>
+      <div class="setting">
+        <div><div class="setting-name">High Contrast Mode</div><div class="setting-desc">Contrast and colorblindness improvements</div></div>
+        <button class="switch" role="switch" aria-checked="false" id="sw-contrast" aria-label="High contrast mode"></button>
+      </div>
+      <div class="setting">
+        <div><div class="setting-name">Statistics</div><div class="setting-desc">Saved only in this browser</div></div>
+        <button class="btn btn-secondary btn-sm" id="reset-stats">Reset</button>
+      </div>
+      <p class="settings-foot">Part of <a href="../">Abbozle</a>, a set of little apps.</p>
+    </div>
+  </div>
+
+  <!-- Confirm -->
+  <div class="overlay" id="confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+    <div class="modal modal-sm">
+      <h2 id="confirm-title"></h2>
+      <p class="confirm-text" id="confirm-text"></p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" data-close id="confirm-cancel">Cancel</button>
+        <button class="btn btn-primary" id="confirm-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="words.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
